@@ -1,0 +1,469 @@
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/build.gradle b/app/build.gradle
+--- a/app/build.gradle	(revision 8a04f30447ca8788034e6e327ed190aadabadaa7)
++++ b/app/build.gradle	(revision 72433d163d302b49ebac07da535289ffce15de13)
+@@ -47,22 +47,20 @@
+ 
+     def mockito_kotlin = "3.2.0"
+     def arch_core_version = "2.1.0"
+-    def coroutines_test_version = "1.3.4"
++    def coroutines_test_version = "1.5.0"
+ 
+     implementation 'androidx.core:core-ktx:1.7.0'
+-    implementation 'androidx.appcompat:appcompat:1.3.1'
++    implementation 'androidx.appcompat:appcompat:1.4.0'
+     implementation 'com.google.android.material:material:1.4.0'
+-    implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
++    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
+     testImplementation 'junit:junit:4.13.2'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+ 
+-    // Mokito
++    // Mockito
+     testImplementation "org.mockito.kotlin:mockito-kotlin:$mockito_kotlin"
+     testImplementation "androidx.arch.core:core-testing:$arch_core_version"
+     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_test_version"
+-
+-
+     // AdapterDelegates
+     implementation "com.hannesdorfmann:adapterdelegates4-kotlin-dsl:$adapter_delegate_version"
+     implementation "com.hannesdorfmann:adapterdelegates4-kotlin-dsl-viewbinding:$adapter_delegate_version"
+Index: app/src/main/java/com/github/kadehar/arterialpressureapp/data/PressureRepositoryFake.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/github/kadehar/arterialpressureapp/data/PressureRepositoryFake.kt b/app/src/main/java/com/github/kadehar/arterialpressureapp/data/PressureRepositoryFake.kt
+--- a/app/src/main/java/com/github/kadehar/arterialpressureapp/data/PressureRepositoryFake.kt	(revision 8a04f30447ca8788034e6e327ed190aadabadaa7)
++++ b/app/src/main/java/com/github/kadehar/arterialpressureapp/data/PressureRepositoryFake.kt	(revision 72433d163d302b49ebac07da535289ffce15de13)
+@@ -1,8 +1,10 @@
+ package com.github.kadehar.arterialpressureapp.data
+ 
++import com.github.kadehar.arterialpressureapp.base.previousPeriod
+ import com.github.kadehar.arterialpressureapp.domain.model.ArterialPressure
++import java.util.*
+ 
+-class PressureRepositoryFake(): PressureRepository {
++class PressureRepositoryFake() : PressureRepository {
+     override suspend fun addNewRecord(arterialPressure: ArterialPressure) {
+         TODO("Not yet implemented")
+     }
+@@ -12,7 +14,38 @@
+     }
+ 
+     override suspend fun getAllRecords(): List<ArterialPressure> {
+-        return listOf(ArterialPressure("1","1","1",100), ArterialPressure("2","2","2",200))
++        return listOf(
++            ArterialPressure(
++                "1",
++                "1",
++                "1",
++                previousPeriod(days = -1).time
++            ),
++            ArterialPressure(
++                "2",
++                "2",
++                "2",
++                previousPeriod(days = 1).time
++            ),
++            ArterialPressure(
++                "3",
++                "3",
++                "3",
++                previousPeriod(months = 1).time
++            ),
++            ArterialPressure(
++                "4",
++                "4",
++                "4",
++                previousPeriod(months = 3).time
++            ),
++            ArterialPressure(
++                "5",
++                "5",
++                "5",
++                previousPeriod(months = 6).time
++            )
++        )
+     }
+ 
+     override suspend fun getRecordById(id: String): ArterialPressure {
+Index: app/src/test/java/com/github/kadehar/arterialpressureapp/ExampleUnitTest.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/test/java/com/github/kadehar/arterialpressureapp/ExampleUnitTest.kt b/app/src/test/java/com/github/kadehar/arterialpressureapp/ExampleUnitTest.kt
+--- a/app/src/test/java/com/github/kadehar/arterialpressureapp/ExampleUnitTest.kt	(revision 8a04f30447ca8788034e6e327ed190aadabadaa7)
++++ b/app/src/test/java/com/github/kadehar/arterialpressureapp/ExampleUnitTest.kt	(revision 72433d163d302b49ebac07da535289ffce15de13)
+@@ -1,91 +1,18 @@
+ package com.github.kadehar.arterialpressureapp
+ 
+-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+-import androidx.lifecycle.Observer
+-import com.github.kadehar.arterialpressureapp.data.PressureRepositoryFake
+-import com.github.kadehar.arterialpressureapp.domain.ArterialPressureInteractor
+-import com.github.kadehar.arterialpressureapp.domain.model.ArterialPressure
+-import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.ArterialPressureListViewModel
+-import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.DataEvent
+-import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.ViewState
+-import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.model.APListItems
+-import com.github.terrakok.cicerone.Router
+-import kotlinx.coroutines.ExperimentalCoroutinesApi
++import org.junit.Assert.assertEquals
+ import org.junit.Test
+ 
+-import org.junit.Assert.*
+-import org.junit.Before
+-import org.junit.Rule
+-import org.mockito.kotlin.*
+-
+ /**
+  * Example local unit test, which will execute on the development machine (host).
+  *
+  * See [testing documentation](http://d.android.com/tools/testing).
+  */
+ class ExampleUnitTest {
+-
+-    @Rule
+-    @JvmField
+-    val instantExecutorRule = InstantTaskExecutorRule()
+-
+-    @ExperimentalCoroutinesApi
+-    @get:Rule
+-    val coroutineRule = CoroutineRule()
+-
+-    private val viewStateObserver: Observer<ViewState> = mock()
+-
+-    lateinit var viewModel: ArterialPressureListViewModel
+-    lateinit var interactor: ArterialPressureInteractor
+-
+-    @Before
+-    fun init() {
+-
+-        interactor = ArterialPressureInteractor(PressureRepositoryFake())
+-        val router: Router = mock()
+-
+-        viewModel = ArterialPressureListViewModel(interactor, router)
+-
+-        viewModel.viewState.observeForever(viewStateObserver)
+-    }
+-
+-
+     @Test
+     fun addition_isCorrect() {
+         assertEquals(4, 2 + 2)
+     }
+-
+-
+-    @Test
+-    fun `LoadData-SuccessfulDataLoad`() {
+-
+-        // Arrange
+-        val list = listOf(
+-            APListItems.ArterialPressure("1", "1", "1", 100),
+-            APListItems.ArterialPressure("2", "2", "2", 200)
+-        )
+-
+-        // Act
+-        viewModel.processUiEvent(DataEvent.LoadData)
+-        val viewState = captureViewState()
+-
+-        // Assert
+-        assertEquals(list[0], viewState.arterialPressureList[0])
+-        assertEquals(list[1], viewState.arterialPressureList[1])
+-
+-    }
+-
+-    private fun captureViewState(): ViewState = capture {
+-        verify(viewStateObserver, atLeastOnce()).onChanged(it.capture())
+-
+-    }
+-
+-    inline fun <reified T : Any> capture(invokeCaptor: (KArgumentCaptor<T>) -> Unit): T {
+-        val captor = argumentCaptor<T>()
+-        invokeCaptor(captor)
+-        return captor.lastValue
+-    }
+-
+ }
+ 
+ 
+Index: app/src/test/java/com/github/kadehar/arterialpressureapp/LoadDataTest.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/test/java/com/github/kadehar/arterialpressureapp/LoadDataTest.kt b/app/src/test/java/com/github/kadehar/arterialpressureapp/LoadDataTest.kt
+new file mode 100644
+--- /dev/null	(revision 72433d163d302b49ebac07da535289ffce15de13)
++++ b/app/src/test/java/com/github/kadehar/arterialpressureapp/LoadDataTest.kt	(revision 72433d163d302b49ebac07da535289ffce15de13)
+@@ -0,0 +1,33 @@
++package com.github.kadehar.arterialpressureapp
++
++import com.github.kadehar.arterialpressureapp.base.previousPeriod
++import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.DataEvent
++import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.model.APListItems
++import org.junit.Assert
++import org.junit.Test
++
++class LoadDataTest : TestBase() {
++    @Test
++    fun `LoadData-SuccessfulDataLoad`() {
++        val list = listOf(
++            APListItems.ArterialPressure(
++                id = "1",
++                morning = "1",
++                evening = "1",
++                timestamp = previousPeriod().time
++            ),
++            APListItems.ArterialPressure(
++                id = "2",
++                morning = "2",
++                evening = "2",
++                timestamp = previousPeriod(days = 1).time
++            )
++        )
++
++        viewModel.processUiEvent(DataEvent.LoadData)
++        val viewState = captureViewState()
++
++        Assert.assertEquals(list[0], viewState.arterialPressureList[0])
++        Assert.assertEquals(list[1], viewState.arterialPressureList[1])
++    }
++}
+\ No newline at end of file
+Index: app/src/test/java/com/github/kadehar/arterialpressureapp/OnFilterButtonClickedTest.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/test/java/com/github/kadehar/arterialpressureapp/OnFilterButtonClickedTest.kt b/app/src/test/java/com/github/kadehar/arterialpressureapp/OnFilterButtonClickedTest.kt
+new file mode 100644
+--- /dev/null	(revision 72433d163d302b49ebac07da535289ffce15de13)
++++ b/app/src/test/java/com/github/kadehar/arterialpressureapp/OnFilterButtonClickedTest.kt	(revision 72433d163d302b49ebac07da535289ffce15de13)
+@@ -0,0 +1,143 @@
++package com.github.kadehar.arterialpressureapp
++
++import com.github.kadehar.arterialpressureapp.base.previousPeriod
++import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.DataEvent
++import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.UiEvent
++import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.model.APListItems
++import org.junit.Assert
++import org.junit.Before
++import org.junit.Test
++
++class OnFilterButtonClickedTest : TestBase() {
++    @Before
++    fun processLoadDataEvent() {
++        viewModel.processUiEvent(DataEvent.LoadData)
++    }
++
++    @Test
++    fun `OnFilterButtonClicked-Today`() {
++        val list = listOf(
++            APListItems.ArterialPressure(
++                id = "1",
++                morning = "1",
++                evening = "1",
++                timestamp = previousPeriod(days = -1).time
++            )
++        )
++
++        viewModel.processUiEvent(UiEvent.OnFilterButtonClicked(0))
++        val viewState = captureViewState()
++
++        Assert.assertEquals(list, viewState.arterialPressureListShown)
++    }
++
++    @Test
++    fun `OnFilterButtonClicked-TwoWeeks`() {
++        val list = listOf(
++            APListItems.ArterialPressure(
++                id = "1",
++                morning = "1",
++                evening = "1",
++                timestamp = previousPeriod(days = -1).time
++            ),
++            APListItems.ArterialPressure(
++                id = "2",
++                morning = "2",
++                evening = "2",
++                timestamp = previousPeriod(days = 1).time
++            )
++        )
++
++        viewModel.processUiEvent(UiEvent.OnFilterButtonClicked(1))
++        val viewState = captureViewState()
++
++        Assert.assertEquals(list, viewState.arterialPressureListShown)
++    }
++
++    @Test
++    fun `OnFilterButtonClicked-OneMonth`() {
++        val list = listOf(
++            APListItems.ArterialPressure(
++                id = "1",
++                morning = "1",
++                evening = "1",
++                timestamp = previousPeriod(days = -1).time
++            ),
++            APListItems.ArterialPressure(
++                id = "2",
++                morning = "2",
++                evening = "2",
++                timestamp = previousPeriod(days = 1).time
++            )
++        )
++
++        viewModel.processUiEvent(UiEvent.OnFilterButtonClicked(2))
++        val viewState = captureViewState()
++
++        Assert.assertEquals(list, viewState.arterialPressureListShown)
++    }
++
++    @Test
++    fun `OnFilterButtonClicked-ThreeMonths`() {
++        val list = listOf(
++            APListItems.ArterialPressure(
++                id = "1",
++                morning = "1",
++                evening = "1",
++                timestamp = previousPeriod(days = -1).time
++            ),
++            APListItems.ArterialPressure(
++                id = "2",
++                morning = "2",
++                evening = "2",
++                timestamp = previousPeriod(days = 1).time
++            ),
++            APListItems.ArterialPressure(
++                "3",
++                "3",
++                "3",
++                previousPeriod(months = 1).time
++            )
++        )
++
++        viewModel.processUiEvent(UiEvent.OnFilterButtonClicked(3))
++        val viewState = captureViewState()
++
++        Assert.assertEquals(list, viewState.arterialPressureListShown)
++    }
++
++    @Test
++    fun `OnFilterButtonClicked-SixMonths`() {
++        val list = listOf(
++            APListItems.ArterialPressure(
++                id = "1",
++                morning = "1",
++                evening = "1",
++                timestamp = previousPeriod(days = -1).time
++            ),
++            APListItems.ArterialPressure(
++                id = "2",
++                morning = "2",
++                evening = "2",
++                timestamp = previousPeriod(days = 1).time
++            ),
++            APListItems.ArterialPressure(
++                "3",
++                "3",
++                "3",
++                previousPeriod(months = 1).time
++            ),
++            APListItems.ArterialPressure(
++                "4",
++                "4",
++                "4",
++                previousPeriod(months = 3).time
++            )
++        )
++
++        viewModel.processUiEvent(UiEvent.OnFilterButtonClicked(4))
++        val viewState = captureViewState()
++
++        Assert.assertEquals(list, viewState.arterialPressureListShown)
++    }
++}
+\ No newline at end of file
+Index: app/src/test/java/com/github/kadehar/arterialpressureapp/TestBase.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/test/java/com/github/kadehar/arterialpressureapp/TestBase.kt b/app/src/test/java/com/github/kadehar/arterialpressureapp/TestBase.kt
+new file mode 100644
+--- /dev/null	(revision 72433d163d302b49ebac07da535289ffce15de13)
++++ b/app/src/test/java/com/github/kadehar/arterialpressureapp/TestBase.kt	(revision 72433d163d302b49ebac07da535289ffce15de13)
+@@ -0,0 +1,48 @@
++package com.github.kadehar.arterialpressureapp
++
++import androidx.arch.core.executor.testing.InstantTaskExecutorRule
++import androidx.lifecycle.Observer
++import com.github.kadehar.arterialpressureapp.data.PressureRepositoryFake
++import com.github.kadehar.arterialpressureapp.domain.ArterialPressureInteractor
++import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.ArterialPressureListViewModel
++import com.github.kadehar.arterialpressureapp.feature.arterial_pressure_list.ui.ViewState
++import com.github.terrakok.cicerone.Router
++import kotlinx.coroutines.ExperimentalCoroutinesApi
++import org.junit.Before
++import org.junit.Rule
++import org.mockito.kotlin.*
++
++open class TestBase {
++    @Rule
++    @JvmField
++    val instantExecutorRule = InstantTaskExecutorRule()
++
++    @ExperimentalCoroutinesApi
++    @get:Rule
++    val coroutineRule = CoroutineRule()
++
++    private val viewStateObserver: Observer<ViewState> = mock()
++    lateinit var viewModel: ArterialPressureListViewModel
++    lateinit var interactor: ArterialPressureInteractor
++
++
++    @Before
++    fun setUp() {
++        val router: Router = mock()
++        interactor = ArterialPressureInteractor(PressureRepositoryFake())
++        viewModel = ArterialPressureListViewModel(interactor, router)
++
++        viewModel.viewState.observeForever(viewStateObserver)
++    }
++
++    fun captureViewState(): ViewState = capture {
++        verify(viewStateObserver, atLeastOnce()).onChanged(it.capture())
++
++    }
++
++    private inline fun <reified T : Any> capture(invokeCaptor: (KArgumentCaptor<T>) -> Unit): T {
++        val captor = argumentCaptor<T>()
++        invokeCaptor(captor)
++        return captor.lastValue
++    }
++}
+\ No newline at end of file
+Index: settings.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/settings.gradle b/settings.gradle
+--- a/settings.gradle	(revision 8a04f30447ca8788034e6e327ed190aadabadaa7)
++++ b/settings.gradle	(revision 72433d163d302b49ebac07da535289ffce15de13)
+@@ -3,7 +3,6 @@
+     repositories {
+         google()
+         mavenCentral()
+-        jcenter() // Warning: this repository is going to shut down soon
+     }
+ }
+ rootProject.name = "ArterialPressureApp"

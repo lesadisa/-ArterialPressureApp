@@ -132,6 +132,7 @@ class OnFilterButtonClickedTest : TestBase() {
                 "4",
                 "4",
                 previousPeriod(months = 3).time
+
             )
         )
 
