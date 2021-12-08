@@ -25,7 +25,6 @@ open class TestBase {
     lateinit var viewModel: ArterialPressureListViewModel
     lateinit var interactor: ArterialPressureInteractor
 
-
     @Before
     fun setUp() {
         val router: Router = mock()
